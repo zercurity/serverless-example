@@ -1,0 +1,79 @@
+# Welcome to Serverless!
+# Happy Coding!
+
+custom:
+  # Your cloud formation deployment name
+  name: serverless-example
+  # This will read your requirements.txt file and download the      necessary pip modules and compile them so that they're compatible with AWS lambda linux container image.
+  pythonRequirements:
+    dockerizePip: true
+    zip: false
+    removeVendorHelper: false
+
+service: ${self:custom.name}
+
+# You can pin your service to only deploy with a specific Serverless # version. Check out our docs for more details
+frameworkVersion: ">1.26.0"
+plugins:
+  - serverless-python-requirements
+  - serverless-prune-plugin  # 'sls prune -n 2' Removes old versions of your code
+
+provider:
+  name: aws
+  runtime: python2.7
+  stage: dev  # 'sls deploy -s prod -v' to deploy as a production instance
+  region: eu-central-1  # The AWS region to deploy your code
+  profile: ${self:custom.name}
+
+# Environment variables can be passed to your Python application.
+# You can use os.environ['db_hostname'] to retreive them.
+environment:
+    db_hostname: example
+    db_database: example
+    db_username: example
+    db_password: example
+
+iamRoleStatements:
+# S3 permissions for lambda logging
+    - Effect: Allow
+      Action:
+        - s3:ListBucket
+        - s3:PutObject
+      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+# For serverless
+    - Effect: Allow
+      Action:
+        - ec2:CreateNetworkInterface
+        - ec2:DescribeNetworkInterfaces
+        - ec2:DetachNetworkInterface
+        - ec2:DeleteNetworkInterface
+      Resource:
+        - "*"
+# You can add packaging information here
+package:
+  individuANYy: false
+  include:
+    - app/handlers/**  # Code
+    - common/**  # Common code
+  exclude:
+    - .git
+    - node_modules/**  # NPM modules
+    - .gitignore
+    - README.md
+    - serverless.yml  # Serverless configuration
+    - requirements.txt  # Python dependancies
+
+functions:
+  # This is your Lambda function definition
+
+  RestHello:
+    handler: app/handlers/rest/hello.get
+    description: GET handler for hello
+    timeout: 5  # Maximum number of seconds for your code to run
+    memorySize: 128  # Can allocate up to 3GB
+    events:
+      - http:
+          method: GET  # HTTP method python, use ANY for everything
+          description: Hello response
+          #path: you/can/use/{path_variables}
+          path: /
